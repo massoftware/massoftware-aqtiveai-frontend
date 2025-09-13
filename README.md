@@ -1,35 +1,23 @@
-## Open AI ChatGPT Chat Page Clone
+## AqtiveAI ChatGPT Clone
 
-Fun project to get much familiar with TailwindCSS and still be able to use ChatGPT bot when it is at full capasity 👹
+## ⚠️ Required: API Key Setup
 
-It's looks like;
+**Before running the app**, you need to configure your OpenAI API key:
 
-![main_screen](./screenshots/main_screen.png)
-
-Happy chating 🤟🏻
-
-## Installation
+1. **Get your OpenAI API key** from Jeffery Wunady
+2. **Copy the environment file**: `cp .env.example .env`
+3. **Edit `.env`** and replace `your_openai_api_key_here` with your actual API key
+4. **Save the file**
 
 ```bash
-## Clone the repository to your local
-git clone https://github.com/yagizhanNY/openai-chatgpt3-clone.git
+## Check if your environment is set up correctly
+npm run setup
 
-## Navigate to project's directory
-cd openai-chatgpt3-clone
-
-## Install the packages
-npm install
-
-## Run the app
+## Run the app (will automatically check environment first)
 npm run start
 ```
 
-After these steps you have to create an OpenAI account to create an API. You can create an account from [this link](https://openai.com/api/). Then you have to create an API key. Then press the `OpenAI API Key` button on the sidebar and paste your api key to the dialog and press `Submit` button.
-
-You can try the [DEMO](https://chatgpt-clone-yny.web.app/) with your own API key.
-
 ## Supported Features
 
-- Historical chat.
-- Save the chat history.
-- Full capacity of **gpt-4o**.
+- Save the chat history
+- Follow up prompt

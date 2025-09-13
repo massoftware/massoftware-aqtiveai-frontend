@@ -129,7 +129,7 @@ export class SidebarComponent implements OnInit {
         this.apiKey = result.apiKey;
 
         // Emit the api key event with new api key.
-        this.apiKeyService.setApiKey();
+        this.apiKeyService.setApiKey(this.apiKey);
 
         this.chatService.updateConfiguration();
       }
