@@ -1,71 +1,190 @@
-<div
-  id="chat-content-container"
-  class="flex justify-between min-h-screen flex-col md:pl-[320px]"
->
-  <div id="mainChatContainer" *ngIf="messages.length > 0">
-    <div *ngFor="let message of messages" class="mx-5 text-white">
-      <div *ngIf="message.content !== null">
-        <div
-          [class]="
-            'flex items-start p-5 ' +
-            (message.role === 'user' ? 'bg-[#40414E]' : '')
-          "
+<!-- Main Container with consistent background -->
+<div class="h-screen bg-white md:pl-64">
+
+<!-- New Chat Centered Layout -->
+<div *ngIf="messages.length === 0 && !isBusy && !isTyping" class="h-full flex flex-col justify-center items-center">
+  <div class="flex flex-col items-center w-full max-w-2xl mx-auto px-4">
+    <!-- Centered Welcome Message -->
+    <h1 class="text-4xl font-medium text-gray-800 mb-8 text-center">
+      Ready when you are.
+    </h1>
+    
+    <!-- Centered Input Box -->
+    <div class="w-full max-w-2xl">
+      <div class="relative flex items-center bg-white border border-gray-300 rounded-3xl shadow-sm transition-all duration-200">
+        <!-- Plus Icon -->
+        <button class="flex-shrink-0 p-3 text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </button>
+
+        <!-- Text Input -->
+        <textarea
+          class="flex-1 px-4 py-3 bg-transparent text-gray-800 placeholder-gray-500 resize-none focus:outline-none min-h-[20px] max-h-32"
+          placeholder="Ask anything"
+          rows="1"
+          name="textInput"
+          #textInput
+          (keyup.enter)="createCompletion(textInput)"
+          (input)="autoResize($event)"
+          [disabled]="apiKey === null || apiKey === ''"
+        ></textarea>
+
+        <!-- Send Button -->
+        <button
+          [disabled]="apiKey === null || apiKey === ''"
+          class="flex-shrink-0 p-2 m-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-full transition-colors duration-200"
+          type="button"
+          (click)="createCompletion(textInput)"
         >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m-7 7l7-7 7 7"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- API Key Message -->
+    <p class="text-gray-600 mt-4 text-center" *ngIf="apiKey === null || apiKey === ''">
+      Please configure your API key to get started.
+    </p>
+  </div>
+</div>
+
+<!-- Existing Chat Layout -->
+<div *ngIf="displayMessages.length > 0 || isBusy || isTyping" id="chat-content-container" class="h-full flex flex-col bg-white">
+  <!-- Chat Title Header -->
+  <div *ngIf="displayMessages.length > 0" class="flex-shrink-0 border-b border-gray-200 bg-white px-4 py-3">
+    <div class="max-w-3xl mx-auto">
+      <h1 class="text-xl font-medium text-gray-800 truncate">
+        {{ getChatTitle() }}
+      </h1>
+    </div>
+  </div>
+
+  <!-- Chat Messages Area -->
+  <div id="mainChatContainer" #mainChatContainer *ngIf="displayMessages.length > 0 || isBusy" class="flex-1 overflow-y-auto pb-4">
+    <div *ngFor="let message of displayMessages" class="py-4">
+      <div *ngIf="message.content !== null">
+        <!-- User Message (Right-aligned bubble) -->
+        <div *ngIf="message.role === 'user'" class="max-w-3xl mx-auto px-4">
+          <div class="flex justify-end mb-4">
+            <div class="max-w-2xl">
+              <div class="user-message-bubble max-w-full">
+                <div class="text-gray-800 text-base" [innerHTML]="message.content"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assistant Message (Left-aligned) -->
+        <div *ngIf="message.role === 'assistant'" class="max-w-3xl mx-auto px-4">
+          <div class="flex items-start space-x-4">
+            <img
+              height="40"
+              width="40"
+              src="../../assets/img/aqtivehr-appicon.png"
+              class="rounded-full flex-shrink-0"
+              alt="assistant_photo"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="prose prose-gray max-w-none" [innerHTML]="message.content"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div *ngIf="isBusy" class="py-4">
+      <div class="max-w-3xl mx-auto px-4">
+        <div class="flex items-start space-x-4">
           <img
-            height="50"
-            width="50"
-            [src]="
-              message.role === 'assistant'
-                ? '../../assets/img/chatgpt.jpg'
-                : '../../assets/img/user.png'
-            "
-            class="rounded-full mr-10"
-            alt="user_photo"
+            height="40"
+            width="40"
+            src="../../assets/img/aqtivehr-appicon.png"
+            class="rounded-full flex-shrink-0"
+            alt="assistant_photo"
           />
-          <div class="align-middle">
-            <div class="prose prose-invert" [innerHTML]="message.content"></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center space-x-1">
+              <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <div *ngIf="messages.length === 0">
-    <div [class]="'justify-center flex items-center p-5'">
-      <h1 *ngIf="apiKey" [class]="'text-white'">
-        Please start typing some prompt...
-      </h1>
-      <h1 *ngIf="apiKey === null || apiKey === ''" [class]="'text-white'">
-        Please enter your API Key...
-      </h1>
+
+  <!-- Fixed Input Area at Bottom -->
+  <div class="flex-shrink-0 border-t border-gray-200 bg-white px-4 py-4">
+    <div class="max-w-3xl mx-auto">
+      <div class="relative flex items-center bg-white border border-gray-300 rounded-3xl shadow-sm transition-all duration-200">
+        <!-- Plus Icon -->
+        <button class="flex-shrink-0 p-3 text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </button>
+
+        <!-- Text Input -->
+        <textarea
+          class="flex-1 px-4 py-3 bg-transparent text-gray-800 placeholder-gray-500 resize-none focus:outline-none min-h-[20px] max-h-32"
+          placeholder="Ask anything"
+          rows="1"
+          name="textInput"
+          #textInput
+          (keyup.enter)="createCompletion(textInput)"
+          (input)="autoResize($event)"
+          [disabled]="apiKey === null || apiKey === ''"
+        ></textarea>
+
+        <!-- Send/Stop Button -->
+        <button
+          [disabled]="apiKey === null || apiKey === ''"
+          class="flex-shrink-0 p-2 m-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-full transition-colors duration-200"
+          type="button"
+        >
+          <!-- Send Arrow (when not busy and not typing) -->
+          <svg
+            *ngIf="!isBusy && !isTyping"
+            (click)="createCompletion(textInput)"
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m-7 7l7-7 7 7"></path>
+          </svg>
+          
+          <!-- Loading Spinner (when busy/loading) -->
+          <div
+            *ngIf="isBusy && !isTyping"
+            class="w-5 h-5 animate-spin rounded-full border-2 border-white border-r-transparent"
+            role="status"
+          >
+            <span class="sr-only">Loading...</span>
+          </div>
+          
+          <!-- Stop Button (when typing) -->
+          <svg
+            *ngIf="isTyping"
+            (click)="stopTyping()"
+            class="w-5 h-5"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <rect x="6" y="6" width="12" height="12" rx="1"></rect>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
-  <div class="flex mx-5 p-4">
-    <textarea
-      class="w-full p-3 bg-[#40414E] text-white rounded-l-md resize-none focus:outline-none"
-      placeholder="Type something..."
-      rows="1"
-      name="textInput"
-      #textInput
-      (keyup.enter)="createCompletion(textInput)"
-      [disabled]="apiKey === null || apiKey === ''"
-    ></textarea>
-    <button
-      [disabled]="apiKey === null || apiKey === ''"
-      class="bg-[#40414E] p-3 rounded-r-md"
-      type="button"
-    >
-      <i
-        *ngIf="isBusy === false"
-        (click)="createCompletion(textInput)"
-        class="fa-regular fa-paper-plane text-white"
-      ></i>
-      <div
-        *ngIf="isBusy === true"
-        class="inline-block h-5 w-5 text-white animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
-        role="status"
-      >
-        <span class="sr-only">Loading...</span>
-      </div>
-    </button>
-  </div>
 </div>
+
+</div> <!-- Close main container -->

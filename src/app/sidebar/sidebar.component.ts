@@ -2,13 +2,18 @@ import { Component, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
 import { ApiKeyService } from '../services/api-key.service';
-import { ChatCompletionMessage } from 'openai/resources';
 import { ChatDataService } from '../services/chat-data.service';
 import ChatHistories from '../shared/models/chat-histories.model';
 import { ChatHistoryDetails } from '../shared/models/chat-history-details.model';
 import { ChatService } from '../services/chat.service';
 import { UserDialogComponent } from '../user-dialog/user-dialog.component';
 import { v4 as uuidv4 } from 'uuid';
+
+// Interface for chat messages (matching the one in ChatService)
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 @Component({
   selector: 'app-sidebar',
@@ -23,43 +28,41 @@ export class SidebarComponent implements OnInit {
     private apiKeyService: ApiKeyService
   ) {}
 
-  messages: ChatCompletionMessage[] = [];
+  messages: ChatMessage[] = [];
   chatHistories: ChatHistories = {
     chatHistoryDetails: [],
   };
+  filteredChats: ChatHistoryDetails[] = [];
+  searchTerm: string = '';
   userDialogBox!: MatDialogRef<UserDialogComponent>;
   apiKey: string = '';
   isHistoricalChat: boolean = false;
+  selectedChatId: string | null = null;
 
   ngOnInit(): void {
     this.chatService.getMessagesSubject().subscribe((messages) => {
       this.messages = messages;
     });
+    
+    // Listen for chat history updates
+    this.chatService.getChatHistoryUpdated().subscribe(() => {
+      console.log('Sidebar received chat history update notification');
+      this.refreshChatHistories();
+    });
+    
     this.chatHistories = this.getCurrentChatHistoriesFromLocalStorage();
+    this.filteredChats = this.chatHistories.chatHistoryDetails;
   }
 
-  async addNewChat() {
-    if (this.isHistoricalChat === false) {
-      const chatHistoryId = uuidv4();
-      const title = (await this.chatService.getTitleFromChatGpt(this.messages))
-        .choices[0].message?.content!;
-
-      const chatHistory: ChatHistoryDetails = {
-        id: chatHistoryId,
-        messages: this.messages,
-        title: title,
-      };
-
-      this.chatHistories = this.getCurrentChatHistoriesFromLocalStorage();
-
-      if (this.checkIsChatHistoryExists(chatHistory.id) === false) {
-        this.chatHistories.chatHistoryDetails.unshift(chatHistory);
-
-        this.setChatHistoriesToLocalStorage(this.chatHistories);
-      }
-    }
+  addNewChat() {
+    // Simply clear the current chat and reset to new chat state
+    // Chat history is now auto-saved when AI responds
     this.chatService.setMessagesSubject([]);
+    this.chatService.setIsHistoricalChat(false);
+    this.chatService.setCurrentChatId(null); // Clear current chat ID
+    this.chatService.setCurrentSessionId(null); // Clear session ID for fresh start
     this.isHistoricalChat = false;
+    this.selectedChatId = null; // Clear selection when starting new chat
   }
 
   getHistoryChatMessages(id: string) {
@@ -68,8 +71,19 @@ export class SidebarComponent implements OnInit {
     );
 
     if (history) {
-      this.chatService.setMessagesSubject(history.messages);
+      // Convert any potential null content to empty string for compatibility
+      const safeMessages: ChatMessage[] = history.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content || ''
+      }));
+      
+      this.chatService.setMessagesSubject(safeMessages);
+      this.chatService.setIsHistoricalChat(true);
+      this.chatService.setCurrentChatTitle(history.title); // Set the chat title
+      this.chatService.setCurrentChatId(id); // Set the current chat ID for saving
+      this.chatService.setCurrentSessionId(history.sessionId || null); // Set the session ID for continuity
       this.isHistoricalChat = true;
+      this.selectedChatId = id; // Set the selected chat ID
     }
   }
 
@@ -97,6 +111,7 @@ export class SidebarComponent implements OnInit {
       this.chatHistories.chatHistoryDetails.filter((c) => c.id !== id);
 
     this.setChatHistoriesToLocalStorage(this.chatHistories);
+    this.filterChats();
   }
 
   dialog() {
@@ -114,7 +129,7 @@ export class SidebarComponent implements OnInit {
         this.apiKey = result.apiKey;
 
         // Emit the api key event with new api key.
-        this.apiKeyService.setApiKey(this.apiKey);
+        this.apiKeyService.setApiKey();
 
         this.chatService.updateConfiguration();
       }
@@ -127,5 +142,26 @@ export class SidebarComponent implements OnInit {
       (c) => c.id === id
     );
     return result;
+  }
+
+  refreshChatHistories() {
+    console.log('Refreshing chat histories...');
+    // Add a small delay to ensure localStorage is updated
+    setTimeout(() => {
+      this.chatHistories = this.getCurrentChatHistoriesFromLocalStorage();
+      console.log('Loaded chat histories:', this.chatHistories.chatHistoryDetails.length);
+      this.filterChats();
+      console.log('Filtered chats:', this.filteredChats.length);
+    }, 100);
+  }
+
+  filterChats() {
+    if (!this.searchTerm.trim()) {
+      this.filteredChats = this.chatHistories.chatHistoryDetails;
+    } else {
+      this.filteredChats = this.chatHistories.chatHistoryDetails.filter(chat =>
+        chat.title.toLowerCase().includes(this.searchTerm.toLowerCase())
+      );
+    }
   }
 }

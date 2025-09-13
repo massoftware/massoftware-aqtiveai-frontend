@@ -1,4 +1,211 @@
 #mainChatContainer {
-  height: 90vh;
-  overflow-y: scroll;
+  height: auto;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar */
+#mainChatContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+#mainChatContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#mainChatContainer::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+#mainChatContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Auto-resize textarea */
+.auto-resize {
+  resize: none;
+  overflow: hidden;
+}
+
+/* Remove textarea borders and focus effects */
+textarea {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+textarea:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Focus styles for better accessibility */
+.focus-within\:shadow-xl:focus-within {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Typing indicator animation */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+
+.typing-indicator span {
+  height: 8px;
+  width: 8px;
+  margin: 0 2px;
+  background-color: #9ca3af;
+  border-radius: 50%;
+  display: inline-block;
+  animation: typing 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typing {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* User message bubble styling */
+.user-message-bubble {
+  background-color: #f1f3f4;
+  border-radius: 24px;
+  padding: 12px 20px;
+  word-wrap: break-word;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Chat title styling */
+.chat-title {
+  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Custom ChatGPT-style table styling */
+.custom-table {
+  margin: 1.5rem 0;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.custom-table-header {
+  display: flex;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #e1e5e9;
+}
+
+.custom-table-header-cell {
+  flex: 1;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+  border-right: 1px solid #e1e5e9;
+}
+
+.custom-table-header-cell:last-child {
+  border-right: none;
+}
+
+.custom-table-row {
+  display: flex;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.custom-table-row:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.custom-table-row:last-child {
+  border-bottom: none;
+}
+
+.custom-table-row:hover {
+  background-color: #f1f3f4;
+}
+
+.custom-table-cell {
+  flex: 1;
+  padding: 12px 16px;
+  color: #4a5568;
+  font-size: 14px;
+  border-right: 1px solid #e1e5e9;
+  word-wrap: break-word;
+}
+
+.custom-table-cell:last-child {
+  border-right: none;
+}
+
+/* Fallback for regular markdown tables */
+::ng-deep .prose table {
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+::ng-deep .prose table th,
+::ng-deep .prose table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e1e5e9;
+  font-size: 14px;
+}
+
+::ng-deep .prose table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #2d3748;
+  border-bottom: 2px solid #e1e5e9;
+}
+
+::ng-deep .prose table td {
+  color: #4a5568;
+  background-color: #ffffff;
+}
+
+::ng-deep .prose table tr:nth-child(even) td {
+  background-color: #f8f9fa;
+}
+
+::ng-deep .prose table tr:last-child th,
+::ng-deep .prose table tr:last-child td {
+  border-bottom: none;
+}
+
+::ng-deep .prose table tr:hover td {
+  background-color: #f1f3f4;
+}
+
+::ng-deep .prose table th:not(:last-child),
+::ng-deep .prose table td:not(:last-child) {
+  border-right: 1px solid #e1e5e9;
+}
+
+::ng-deep .prose {
+  max-width: none;
 }

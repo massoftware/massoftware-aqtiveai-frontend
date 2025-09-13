@@ -5,7 +5,46 @@
 }
 
 .active {
-  background-color: rgb(95, 94, 94);
+  background-color: rgb(55, 65, 81);
   border-radius: 6px;
   color: white;
+}
+
+/* Custom scrollbar for chat history */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 2px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Custom hover color for search input */
+.hover\:bg-gray-750:hover {
+  background-color: rgb(55, 65, 81);
+}
+
+/* Custom hover color for chat items */
+.chat-item:hover {
+  background-color: rgba(156, 163, 175, 0.2) !important;
+}
+
+.chat-item.selected {
+  background-color: rgba(156, 163, 175, 0.4) !important;
 }

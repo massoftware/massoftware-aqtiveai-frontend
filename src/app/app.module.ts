@@ -7,6 +7,7 @@ import { ChatComponent } from './chat/chat.component';
 import { ChatContentComponent } from './chat/chat-content/chat-content.component';
 import { EffectsModule } from '@ngrx/effects';
 import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 import { MarkdownModule } from 'ngx-markdown';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -33,6 +34,7 @@ import { UserDialogComponent } from './user-dialog/user-dialog.component';
     EffectsModule.forRoot([]),
     BrowserModule,
     FormsModule,
+    HttpClientModule,
     MatDialogModule,
     MatButtonModule,
     AppRoutingModule,
