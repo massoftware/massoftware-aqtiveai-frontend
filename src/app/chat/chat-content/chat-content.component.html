@@ -28,12 +28,10 @@
           #textInput
           (keyup.enter)="createCompletion(textInput)"
           (input)="autoResize($event)"
-          [disabled]="apiKey === null || apiKey === ''"
         ></textarea>
 
         <!-- Send Button -->
         <button
-          [disabled]="apiKey === null || apiKey === ''"
           class="flex-shrink-0 p-2 m-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-full transition-colors duration-200"
           type="button"
           (click)="createCompletion(textInput)"
@@ -45,10 +43,6 @@
       </div>
     </div>
 
-    <!-- API Key Message -->
-    <p class="text-gray-600 mt-4 text-center" *ngIf="apiKey === null || apiKey === ''">
-      Please configure your API key to get started.
-    </p>
   </div>
 </div>
 
@@ -141,12 +135,10 @@
           #textInput
           (keyup.enter)="createCompletion(textInput)"
           (input)="autoResize($event)"
-          [disabled]="apiKey === null || apiKey === ''"
         ></textarea>
 
         <!-- Send/Stop Button -->
         <button
-          [disabled]="apiKey === null || apiKey === ''"
           class="flex-shrink-0 p-2 m-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-full transition-colors duration-200"
           type="button"
         >

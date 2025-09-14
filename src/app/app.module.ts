@@ -18,7 +18,6 @@ import { NavbarTitleComponent } from './navbar-title/navbar-title.component';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { SidebarComponent } from './sidebar/sidebar.component';
-import { UserDialogComponent } from './user-dialog/user-dialog.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +27,6 @@ import { UserDialogComponent } from './user-dialog/user-dialog.component';
     ButtonsComponent,
     SidebarComponent,
     ChatContentComponent,
-    UserDialogComponent,
   ],
   imports: [
     EffectsModule.forRoot([]),

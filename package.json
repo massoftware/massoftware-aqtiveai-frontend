@@ -3,14 +3,11 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "prestart": "node scripts/check-env.js",
     "start": "ng serve",
-    "prebuild": "node scripts/check-env.js",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "setup": "node scripts/check-env.js",
-    "postinstall": "echo '\n🚀 Setup complete! Run \"npm run setup\" to check your environment configuration.\n'"
+    "postinstall": "echo '\n🚀 Setup complete!\n'"
   },
   "private": true,
   "dependencies": {
@@ -48,7 +45,7 @@
     "@tailwindcss/typography": "^0.5.13",
     "@types/jasmine": "^5.1.4",
     "@types/marked": "^4.0.8",
-    "@types/node": "^20.11.0",
+    "@types/node": "^20.19.14",
     "autoprefixer": "^10.4.19",
     "jasmine-core": "^5.1.2",
     "karma": "^6.4.0",

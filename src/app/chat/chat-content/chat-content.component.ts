@@ -7,9 +7,7 @@ import {
   ViewChild,
 } from '@angular/core';
 
-import { ApiKeyService } from 'src/app/services/api-key.service';
 import { ChatService } from '../../services/chat.service';
-import { ChatDataService } from '../../services/chat-data.service';
 import { MarkdownService } from 'ngx-markdown';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChatHistoryDetails } from '../../shared/models/chat-history-details.model';
@@ -27,8 +25,6 @@ export class ChatContentComponent
   constructor(
     private chatService: ChatService,
     private markdownService: MarkdownService,
-    private apiKeyService: ApiKeyService,
-    private chatDataService: ChatDataService,
     private snackBar: MatSnackBar
   ) {}
 
@@ -36,7 +32,6 @@ export class ChatContentComponent
   @ViewChild('mainChatContainer') chatContainer!: ElementRef;
   public messages: any[] = [];
   public displayMessages: any[] = [];
-  apiKey: string | null = '';
   isBusy: boolean = false;
   isTyping: boolean = false;
   isLoadingHistory: boolean = false;
@@ -48,13 +43,18 @@ export class ChatContentComponent
   private currentChatId: string = '';
   private currentSessionId: string = '';
   private isStoppedByUser: boolean = false;
+  private isActiveConversation: boolean = false;
   @ViewChild('textInput', { static: true }) textInputRef!: ElementRef;
 
   ngOnInit(): void {
     this.scrollToBottom();
 
-    // Subscribe to messages
+    // Subscribe to messages from the chat service (used for sidebar navigation and new chat)
     this.chatService.getMessagesSubject().subscribe(async (messages) => {
+      // Always reset active conversation flag when subscription is triggered
+      // This handles both new chats (length 0) and historical chat loading (length > 0)
+      this.isActiveConversation = false;
+
       if (this.isHistoricalChat && messages.length > 0) {
         // For historical chats, prepare messages but don't display them yet
         this.isLoadingHistory = true;
@@ -75,10 +75,10 @@ export class ChatContentComponent
         
         this.messages = processedMessages;
         this.displayMessages = []; // Keep display empty while loading
-        
+
         // Wait for next tick to ensure DOM is ready, then show messages at bottom
         setTimeout(() => {
-          this.displayMessages = this.messages;
+          this.displayMessages = [...this.messages]; // Create a copy, not a reference!
           // Immediately scroll to bottom without animation
           setTimeout(() => {
             this.scrollToBottomInstant();
@@ -101,8 +101,9 @@ export class ChatContentComponent
         }));
         
         this.messages = processedMessages;
-        this.displayMessages = processedMessages;
+        this.displayMessages = [...processedMessages]; // Create a copy, not a reference!
         this.isLoadingHistory = false;
+
         
         // Auto-scroll for new messages
         if (messages.length > 0) {
@@ -118,25 +119,24 @@ export class ChatContentComponent
         this.currentChatId = '';
         this.displayMessages = [];
         this.isLoadingHistory = false;
+        this.isActiveConversation = false; // Reset active conversation flag for new chats
         // Don't set isHistoricalChat here as it's managed by the service
       }
     });
 
-    // Subscribe to the api key.
-    this.apiKeyService.getApiKey().subscribe((apiKey) => {
-      this.apiKey = apiKey;
-    });
 
     // Subscribe to historical chat state
     this.chatService.getIsHistoricalChat().subscribe((isHistorical) => {
       this.isHistoricalChat = isHistorical;
-      console.log('Chat component: isHistoricalChat =', isHistorical);
+      // Reset active conversation flag when switching chat modes
+      if (isHistorical) {
+        this.isActiveConversation = false;
+      }
     });
 
     // Subscribe to chat title changes
     this.chatService.getCurrentChatTitleObservable().subscribe((title) => {
       this.chatTitle = title;
-      console.log('Chat component: title changed to =', title);
     });
 
     // Subscribe to current chat ID changes
@@ -146,13 +146,11 @@ export class ChatContentComponent
       if (chatId) {
         this.chatSaved = true;
       }
-      console.log('Chat component: currentChatId changed to =', chatId);
     });
 
     // Subscribe to current session ID changes
     this.chatService.getCurrentSessionId().subscribe((sessionId) => {
       this.currentSessionId = sessionId || '';
-      console.log('Chat component: currentSessionId changed to =', sessionId);
     });
   }
 
@@ -163,6 +161,7 @@ export class ChatContentComponent
   // Removed ngAfterViewChecked to prevent forced scrolling during typing
 
   async createCompletion(element: HTMLTextAreaElement) {
+
     const prompt = element.value;
     if (prompt.length <= 1 || this.isBusy) {
       element.value = '';
@@ -171,6 +170,16 @@ export class ChatContentComponent
     }
     element.value = '';
     element.style.height = 'auto';
+
+    // If this was a historical chat, convert it to an active chat now
+    if (this.isHistoricalChat) {
+      this.isHistoricalChat = false;
+      this.chatService.setIsHistoricalChat(false);
+    }
+
+    // Mark this as an active conversation to prevent subscription interference
+    this.isActiveConversation = true;
+
     const message: any = {
       role: 'user',
       content: prompt,
@@ -178,11 +187,12 @@ export class ChatContentComponent
 
     this.messages.push(message);
     this.displayMessages.push(message);
+
     setTimeout(() => this.scrollToBottom(), 50); // Always scroll to bottom for new user message
-    
+
     try {
       this.isBusy = true;
-      
+
       // Use the user's current message as the query for the database API
       const result = await this.chatService.createCompletionViaDatabase(prompt);
 
@@ -199,9 +209,16 @@ export class ChatContentComponent
       this.isBusy = false;
       this.isTyping = true;
       
-      // Save chat history immediately when AI starts responding (with initial content)
+      // Save chat history immediately when AI starts responding
       if (this.messages.length >= 2) {
-        await this.saveChatHistoryInitial();
+        // For historical chats, update existing. For new chats, create new entry.
+        if (this.currentChatId) {
+          // This is a follow-up to an existing chat, just update it
+          await this.saveChatHistory();
+        } else {
+          // This is a new chat, create initial entry
+          await this.saveChatHistoryInitial();
+        }
       }
       
       this.typeMessage(result.response, this.messages.length - 1);
@@ -304,7 +321,7 @@ export class ChatContentComponent
   typeMessage(fullText: string, messageIndex: number) {
     let currentText = '';
     let currentIndex = 0;
-    const typingSpeed = 10; // milliseconds between characters (2x faster)
+    const typingSpeed = 3; // milliseconds between characters (much faster)
     let lastTime = performance.now();
     let animationId: number;
     this.isStoppedByUser = false; // Reset stop flag
@@ -322,9 +339,6 @@ export class ChatContentComponent
           this.displayMessages[messageIndex].content = this.messages[messageIndex].content;
           this.displayMessages[messageIndex].rawContent = currentText;
         }
-        
-        // Update the chat service with final messages
-        this.chatService.setMessagesSubject(this.messages);
         
         // Update chat history with current content
         await this.saveChatHistory();
@@ -378,8 +392,8 @@ export class ChatContentComponent
             this.displayMessages[messageIndex].rawContent = fullText;
           }
           
-          // Update the chat service with final messages
-          this.chatService.setMessagesSubject(this.messages);
+          // Don't update chat service during active conversations to avoid duplication
+          // The subscription is only used for loading historical chats and new chat navigation
           
           // Update chat history with final content
           await this.saveChatHistory();
@@ -496,9 +510,6 @@ export class ChatContentComponent
     return html;
   }
 
-  private escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
 
   isAtBottom(): boolean {
     if (!this.chatContainer || !this.chatContainer.nativeElement) {
@@ -543,22 +554,8 @@ export class ChatContentComponent
       // Only generate title if we have at least one AI response and no custom title yet
       if (this.messages.length >= 2 && this.chatTitle === 'New Chat') {
         const userMessage = this.messages[0]?.content || '';
-        const aiResponse = this.messages[1]?.content || '';
-        
-        // Create a prompt to generate a concise title
-        const titlePrompt = `Based on this conversation, generate a concise 2-4 word title that summarizes the main topic:
 
-User: ${userMessage}
-Assistant: ${aiResponse.substring(0, 500)}...
-
-Requirements:
-- Maximum 4 words
-- Capitalize properly
-- No quotes or punctuation
-- Focus on the main topic/subject
-
-Title:`;
-
+        // Generate a concise title from the user's first message
         const generatedTitle = await this.chatService.getTitleFromDatabase(userMessage);
         if (generatedTitle) {
           this.chatTitle = generatedTitle.replace(/['"]/g, ''); // Remove quotes if any
@@ -572,12 +569,10 @@ Title:`;
   }
 
   async saveChatHistoryInitial() {
-    console.log('saveChatHistoryInitial called - chatSaved:', this.chatSaved, 'isHistoricalChat:', this.isHistoricalChat, 'messages.length:', this.messages.length, 'currentChatId:', this.currentChatId);
     
     // Only save if it's a truly new chat (no currentChatId) with messages and hasn't been saved yet
     if (!this.chatSaved && !this.currentChatId && this.messages.length > 0) {
       try {
-        console.log('Starting to save initial chat history...');
         const chatHistoryId = uuidv4();
         
         // Generate title first if needed
@@ -629,24 +624,18 @@ Title:`;
         
         // Notify other components that chat history was updated
         this.chatService.notifyChatHistoryUpdated();
-        console.log('Notification sent to service');
         
-        console.log('Initial chat history saved successfully:', title);
       } catch (error) {
-        console.log('Failed to save initial chat history:', error);
+        console.error('Failed to save initial chat history:', error);
       }
-    } else {
-      console.log('Skipping initial save - conditions not met');
     }
   }
 
   async saveChatHistory() {
-    console.log('saveChatHistory called - updating existing chat');
     
     // This method now updates existing chat with final content
     if (this.chatSaved && this.currentChatId) {
       try {
-        console.log('Updating existing chat history...');
         
         const currentHistories = this.getCurrentChatHistoriesFromLocalStorage();
         const chatIndex = currentHistories.chatHistoryDetails.findIndex(
@@ -671,10 +660,9 @@ Title:`;
           
           // Notify other components that chat history was updated
           this.chatService.notifyChatHistoryUpdated();
-          console.log('Updated existing chat history successfully and notified sidebar');
         }
       } catch (error) {
-        console.log('Failed to update chat history:', error);
+        console.error('Failed to update chat history:', error);
       }
     }
   }

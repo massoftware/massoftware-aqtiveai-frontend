@@ -1,12 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
-import { ApiKeyService } from '../services/api-key.service';
 import { ChatDataService } from '../services/chat-data.service';
 import ChatHistories from '../shared/models/chat-histories.model';
 import { ChatHistoryDetails } from '../shared/models/chat-history-details.model';
 import { ChatService } from '../services/chat.service';
-import { UserDialogComponent } from '../user-dialog/user-dialog.component';
 import { v4 as uuidv4 } from 'uuid';
 
 // Interface for chat messages (matching the one in ChatService)
@@ -23,9 +20,7 @@ interface ChatMessage {
 export class SidebarComponent implements OnInit {
   constructor(
     private chatDataService: ChatDataService,
-    private chatService: ChatService,
-    private dialogModel: MatDialog,
-    private apiKeyService: ApiKeyService
+    private chatService: ChatService
   ) {}
 
   messages: ChatMessage[] = [];
@@ -34,8 +29,6 @@ export class SidebarComponent implements OnInit {
   };
   filteredChats: ChatHistoryDetails[] = [];
   searchTerm: string = '';
-  userDialogBox!: MatDialogRef<UserDialogComponent>;
-  apiKey: string = '';
   isHistoricalChat: boolean = false;
   selectedChatId: string | null = null;
 
@@ -46,7 +39,6 @@ export class SidebarComponent implements OnInit {
     
     // Listen for chat history updates
     this.chatService.getChatHistoryUpdated().subscribe(() => {
-      console.log('Sidebar received chat history update notification');
       this.refreshChatHistories();
     });
     
@@ -76,7 +68,7 @@ export class SidebarComponent implements OnInit {
         role: msg.role,
         content: msg.content || ''
       }));
-      
+
       this.chatService.setMessagesSubject(safeMessages);
       this.chatService.setIsHistoricalChat(true);
       this.chatService.setCurrentChatTitle(history.title); // Set the chat title
@@ -114,28 +106,6 @@ export class SidebarComponent implements OnInit {
     this.filterChats();
   }
 
-  dialog() {
-    const dialogRef = this.dialogModel.open(UserDialogComponent, {
-      data: {
-        message:
-          "It's not stored in our end, it's only available in your browser localStorage",
-        title: 'Please enter your API key',
-      },
-      width: '400px',
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.apiKey = result.apiKey;
-
-        // Emit the api key event with new api key.
-        this.apiKeyService.setApiKey(this.apiKey);
-
-        this.chatService.updateConfiguration();
-      }
-      this.chatDataService.setAPIKeyToLocalStore(this.apiKey);
-    });
-  }
 
   private checkIsChatHistoryExists(id: string) {
     const result = this.chatHistories.chatHistoryDetails.some(
@@ -145,13 +115,10 @@ export class SidebarComponent implements OnInit {
   }
 
   refreshChatHistories() {
-    console.log('Refreshing chat histories...');
     // Add a small delay to ensure localStorage is updated
     setTimeout(() => {
       this.chatHistories = this.getCurrentChatHistoriesFromLocalStorage();
-      console.log('Loaded chat histories:', this.chatHistories.chatHistoryDetails.length);
       this.filterChats();
-      console.log('Filtered chats:', this.filteredChats.length);
     }, 100);
   }
 

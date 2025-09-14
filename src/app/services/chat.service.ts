@@ -1,9 +1,7 @@
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-
-import { ChatDataService } from './chat-data.service';
-import { ApiKeyService } from './api-key.service';
+import { environment } from '../../environments/environment';
 
 // Interface for database API request/response
 interface DatabaseQueryRequest {
@@ -39,8 +37,6 @@ export class ChatService {
   private currentSessionId = new BehaviorSubject<string | null>(null);
 
   constructor(
-    private chatDataService: ChatDataService, 
-    private apiKeyService: ApiKeyService,
     private http: HttpClient
   ) {}
 
@@ -49,34 +45,36 @@ export class ChatService {
   }
 
   async createCompletionViaDatabase(query: string): Promise<{response: string, sessionId: string}> {
-    const request: DatabaseQueryRequest = { 
+    const request: DatabaseQueryRequest = {
       query,
       session_id: this.currentSessionId.value || undefined
     };
-    
+
     console.log('Making request to:', `${this.databaseApiUrl}/ask/`);
     console.log('Request body:', JSON.stringify(request));
-    
+
     try {
       const response = await firstValueFrom(
         this.http.post<DatabaseQueryResponse>(
-          `${this.databaseApiUrl}/ask/`, 
+          `${this.databaseApiUrl}/ask/`,
           request,
-          { 
+          {
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'X-Tenant-ID': environment.tenantId,
+              'X-Database-URL': environment.databaseConnectionString
             }
           }
         )
       );
-      
+
       console.log('Response received:', response);
-      
+
       // Update the current session ID
       if (response.session_id) {
         this.currentSessionId.next(response.session_id);
       }
-      
+
       return {
         response: response.response,
         sessionId: response.session_id

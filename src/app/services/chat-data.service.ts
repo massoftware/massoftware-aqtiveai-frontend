@@ -33,15 +33,4 @@ export class ChatDataService {
     return this.totalChatConversation;
   }
 
-  public setAPIKeyToLocalStore(key: string) {
-    localStorage.setItem('apiKey', key);
-  }
-
-  public getAPIKeyFromLocalStore(): string | null {
-    const apiKey = localStorage.getItem('apiKey');
-    if (apiKey) {
-      return apiKey;
-    }
-    return null;
-  }
 }
