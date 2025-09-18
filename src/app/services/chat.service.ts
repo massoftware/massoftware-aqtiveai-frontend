@@ -1,7 +1,8 @@
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
 // Interface for database API request/response
 interface DatabaseQueryRequest {
@@ -37,11 +38,25 @@ export class ChatService {
   private currentSessionId = new BehaviorSubject<string | null>(null);
 
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
+    private authService: AuthService
   ) {}
 
   public updateConfiguration(): void {
     // No longer needed for database API
+  }
+
+  private getHeaders(): HttpHeaders {
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    const token = this.authService.getToken();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    return headers;
   }
 
   async createCompletionViaDatabase(query: string): Promise<{response: string, sessionId: string}> {
@@ -59,11 +74,7 @@ export class ChatService {
           `${this.databaseApiUrl}/ask/`,
           request,
           {
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Tenant-ID': environment.tenantId,
-              'X-Database-URL': environment.databaseConnectionString
-            }
+            headers: this.getHeaders()
           }
         )
       );

@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 
 import { ChatService } from '../../services/chat.service';
+import { AuthService } from '../../services/auth.service';
 import { MarkdownService } from 'ngx-markdown';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChatHistoryDetails } from '../../shared/models/chat-history-details.model';
@@ -24,6 +25,7 @@ export class ChatContentComponent
 {
   constructor(
     private chatService: ChatService,
+    private authService: AuthService,
     private markdownService: MarkdownService,
     private snackBar: MatSnackBar
   ) {}
@@ -321,7 +323,7 @@ export class ChatContentComponent
   typeMessage(fullText: string, messageIndex: number) {
     let currentText = '';
     let currentIndex = 0;
-    const typingSpeed = 3; // milliseconds between characters (much faster)
+    const typingSpeed = 5; // milliseconds between characters (much faster)
     let lastTime = performance.now();
     let animationId: number;
     this.isStoppedByUser = false; // Reset stop flag
@@ -528,6 +530,11 @@ export class ChatContentComponent
 
   getChatTitle(): string {
     return this.chatTitle;
+  }
+
+  getPersonalizedGreeting(): string {
+    const userName = this.authService.getUserName();
+    return `Hi ${userName}, ready when you are.`;
   }
 
   getCurrentChatTitleForSaving(): string {
