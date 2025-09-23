@@ -38,7 +38,13 @@ pipeline {
                     echo "NPM version: $(npm --version)"
                     echo "Build number: ${BUILD_NUMBER}"
                     echo "Branch: ${BRANCH_NAME:-main}"
+                    echo "Git branch: $(git branch --show-current || echo 'detached')"
+                    echo "Git remote branch: $(git symbolic-ref -q --short HEAD || git describe --tags --exact-match)"
                 '''
+                script {
+                    echo "Jenkins BRANCH_NAME: ${env.BRANCH_NAME}"
+                    echo "Jenkins GIT_BRANCH: ${env.GIT_BRANCH}"
+                }
             }
         }
 
@@ -152,6 +158,9 @@ pipeline {
                     branch 'main'
                     branch 'develop'
                     branch 'master'
+                    branch 'origin/main'
+                    branch 'origin/develop'
+                    branch 'origin/master'
                 }
             }
             steps {
@@ -188,6 +197,9 @@ CMD ["nginx", "-g", "daemon off;"]
                     branch 'main'
                     branch 'develop'
                     branch 'master'
+                    branch 'origin/main'
+                    branch 'origin/develop'
+                    branch 'origin/master'
                 }
             }
             steps {
@@ -225,6 +237,8 @@ CMD ["nginx", "-g", "daemon off;"]
                 anyOf {
                     branch 'main'
                     branch 'master'
+                    branch 'origin/main'
+                    branch 'origin/master'
                 }
             }
             steps {
