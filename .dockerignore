@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Build outputs
+dist/
+coverage/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# CI/CD
+Jenkinsfile*
+.github/
+
+# Documentation
+README.md
+docs/
+
+# Environment files
+.env*
+
+# Logs
+logs/
+*.log
+
+# Test files
+e2e/
+*.spec.ts
+*.test.ts
+
+# Other
+.angular/
+.browserslistrc
+karma.conf.js
+tsconfig.spec.json
