@@ -161,6 +161,14 @@ pipeline {
                     branch 'origin/main'
                     branch 'origin/develop'
                     branch 'origin/master'
+                    expression {
+                        return env.GIT_BRANCH == 'origin/master' ||
+                               env.GIT_BRANCH == 'origin/main' ||
+                               env.GIT_BRANCH == 'origin/develop' ||
+                               env.GIT_BRANCH == 'master' ||
+                               env.GIT_BRANCH == 'main' ||
+                               env.GIT_BRANCH == 'develop'
+                    }
                 }
             }
             steps {
@@ -181,7 +189,8 @@ CMD ["nginx", "-g", "daemon off;"]
                         DOCKER_IMAGE = docker.build("${REGISTRY}:${BUILD_NUMBER}")
 
                         // Also tag as latest for main branch
-                        if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master') {
+                        if (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'origin/master' ||
+                            env.GIT_BRANCH == 'main' || env.GIT_BRANCH == 'master') {
                             DOCKER_IMAGE.tag('latest')
                         }
                     } catch (Exception e) {
@@ -200,6 +209,14 @@ CMD ["nginx", "-g", "daemon off;"]
                     branch 'origin/main'
                     branch 'origin/develop'
                     branch 'origin/master'
+                    expression {
+                        return env.GIT_BRANCH == 'origin/master' ||
+                               env.GIT_BRANCH == 'origin/main' ||
+                               env.GIT_BRANCH == 'origin/develop' ||
+                               env.GIT_BRANCH == 'master' ||
+                               env.GIT_BRANCH == 'main' ||
+                               env.GIT_BRANCH == 'develop'
+                    }
                 }
             }
             steps {
@@ -209,7 +226,8 @@ CMD ["nginx", "-g", "daemon off;"]
                         docker.withRegistry('', REGISTRY_CREDENTIAL) {
                             DOCKER_IMAGE.push("${BUILD_NUMBER}")
 
-                            if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master') {
+                            if (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'origin/master' ||
+                                env.GIT_BRANCH == 'main' || env.GIT_BRANCH == 'master') {
                                 DOCKER_IMAGE.push('latest')
                             }
                         }
@@ -239,6 +257,12 @@ CMD ["nginx", "-g", "daemon off;"]
                     branch 'master'
                     branch 'origin/main'
                     branch 'origin/master'
+                    expression {
+                        return env.GIT_BRANCH == 'origin/master' ||
+                               env.GIT_BRANCH == 'origin/main' ||
+                               env.GIT_BRANCH == 'master' ||
+                               env.GIT_BRANCH == 'main'
+                    }
                 }
             }
             steps {
