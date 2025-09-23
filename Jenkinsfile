@@ -131,10 +131,16 @@ pipeline {
                 echo '🔒 Running security audit...'
                 script {
                     try {
-                        sh 'npm audit --audit-level=high'
+                        // Check for critical vulnerabilities first
+                        sh 'npm audit --audit-level=critical'
+                        echo "✅ No critical vulnerabilities found"
+
+                        // Run full audit for reporting but don't fail the build
+                        sh 'npm audit || echo "⚠️ Non-critical vulnerabilities detected but build continues"'
                     } catch (Exception e) {
-                        echo "⚠️ Security vulnerabilities found: ${e.getMessage()}"
-                        currentBuild.result = 'UNSTABLE'
+                        echo "❌ Critical security vulnerabilities found: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        error("Build failed due to critical security vulnerabilities")
                     }
                 }
             }
