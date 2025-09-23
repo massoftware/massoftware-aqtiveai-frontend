@@ -72,6 +72,7 @@ export class AuthService {
     return userInfo?.given_name || userInfo?.employee_name || 'User';
   }
 
+
   public isAuthenticated(): boolean {
     const token = this.getToken();
     if (!token) return false;

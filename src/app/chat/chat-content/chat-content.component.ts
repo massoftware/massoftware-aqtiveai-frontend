@@ -9,6 +9,7 @@ import {
 
 import { ChatService } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
+import { ChatDataService } from '../../services/chat-data.service';
 import { MarkdownService } from 'ngx-markdown';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChatHistoryDetails } from '../../shared/models/chat-history-details.model';
@@ -26,6 +27,7 @@ export class ChatContentComponent
   constructor(
     private chatService: ChatService,
     private authService: AuthService,
+    private chatDataService: ChatDataService,
     private markdownService: MarkdownService,
     private snackBar: MatSnackBar
   ) {}
@@ -157,7 +159,9 @@ export class ChatContentComponent
   }
 
   ngAfterViewInit() {
-    this.textInputRef.nativeElement.focus();
+    if (this.textInputRef && this.textInputRef.nativeElement) {
+      this.textInputRef.nativeElement.focus();
+    }
   }
 
   // Removed ngAfterViewChecked to prevent forced scrolling during typing
@@ -195,6 +199,15 @@ export class ChatContentComponent
     try {
       this.isBusy = true;
 
+      // Save user message to database if this is a follow-up to an existing chat
+      if (this.currentChatId) {
+        try {
+          await this.chatDataService.addMessage(this.currentChatId, 'user', prompt);
+        } catch (error) {
+          console.error('Failed to save user message to database:', error);
+        }
+      }
+
       // Use the user's current message as the query for the database API
       const result = await this.chatService.createCompletionViaDatabase(prompt);
 
@@ -210,15 +223,15 @@ export class ChatContentComponent
       // Hide loading indicator and start typing effect
       this.isBusy = false;
       this.isTyping = true;
-      
+
       // Save chat history immediately when AI starts responding
       if (this.messages.length >= 2) {
         // For historical chats, update existing. For new chats, create new entry.
         if (this.currentChatId) {
-          // This is a follow-up to an existing chat, just update it
+          // This is a follow-up to an existing chat, assistant message will be saved in saveChatHistory()
           await this.saveChatHistory();
         } else {
-          // This is a new chat, create initial entry
+          // This is a new chat, create initial entry (includes both user and assistant messages)
           await this.saveChatHistoryInitial();
         }
       }
@@ -576,122 +589,82 @@ export class ChatContentComponent
   }
 
   async saveChatHistoryInitial() {
-    
     // Only save if it's a truly new chat (no currentChatId) with messages and hasn't been saved yet
     if (!this.chatSaved && !this.currentChatId && this.messages.length > 0) {
       try {
-        const chatHistoryId = uuidv4();
-        
         // Generate title first if needed
         if (this.chatTitle === 'New Chat' && this.messages.length >= 2) {
           await this.generateChatTitle();
         }
-        
+
         // Use the current chat title
         let title = this.chatTitle;
-        
+
         // Fallback if title is still "New Chat"
         if (title === 'New Chat' && this.messages.length > 0) {
           const firstUserMessage = this.messages.find((m: any) => m.role === 'user')?.content;
           if (typeof firstUserMessage === 'string') {
-            title = firstUserMessage.length > 50 
-              ? firstUserMessage.substring(0, 50) + '...' 
+            title = firstUserMessage.length > 50
+              ? firstUserMessage.substring(0, 50) + '...'
               : firstUserMessage;
           }
         }
 
-        // Create clean messages for saving (use rawContent if available, otherwise content)
-        const cleanMessages = this.messages.map(msg => ({
-          role: msg.role,
-          content: (msg as any).rawContent || msg.content
-        }));
+        // Get the first user message for initial_message
+        const firstUserMessage = this.messages.find((m: any) => m.role === 'user');
+        const initialMessage = firstUserMessage ? ((firstUserMessage as any).rawContent || firstUserMessage.content) : undefined;
 
-        const chatHistory: ChatHistoryDetails = {
-          id: chatHistoryId,
-          messages: cleanMessages,
-          title: title,
-          sessionId: this.currentSessionId || undefined,
-        };
+        // Create chat session via API with initial message
+        const sessionId = await this.chatDataService.createChatSession(title, initialMessage);
 
-        // Store the chat ID for later updates
-        this.currentChatId = chatHistoryId;
+        // Store the session ID
+        this.currentChatId = sessionId;
+        this.chatService.setCurrentSessionId(sessionId);
 
-        const currentHistories = this.getCurrentChatHistoriesFromLocalStorage();
-        console.log('Current histories before save:', currentHistories.chatHistoryDetails.length);
-        
-        // Add new chat to the beginning of the list
-        currentHistories.chatHistoryDetails.unshift(chatHistory);
-        
-        // Save to localStorage
-        this.setChatHistoriesToLocalStorage(currentHistories);
-        console.log('Saved to localStorage, new count:', currentHistories.chatHistoryDetails.length);
-        
+        // Don't add messages here - they will be added by saveChatHistory when typing is complete
+        // The session is created with the initial user message, assistant response will be added separately
+
         // Mark as saved
         this.chatSaved = true;
-        
+
         // Notify other components that chat history was updated
         this.chatService.notifyChatHistoryUpdated();
-        
+
       } catch (error) {
         console.error('Failed to save initial chat history:', error);
       }
     }
   }
 
+
   async saveChatHistory() {
-    
-    // This method now updates existing chat with final content
+    // This method updates existing chat with new messages
     if (this.chatSaved && this.currentChatId) {
       try {
-        
-        const currentHistories = this.getCurrentChatHistoriesFromLocalStorage();
-        const chatIndex = currentHistories.chatHistoryDetails.findIndex(
-          chat => chat.id === this.currentChatId
-        );
-        
-        if (chatIndex !== -1) {
-          // Create clean messages for saving (use rawContent if available, otherwise content)
-          const cleanMessages = this.messages.map(msg => ({
-            role: msg.role,
-            content: (msg as any).rawContent || msg.content
-          }));
-          
-          // Update the existing chat with the complete messages and session ID
-          currentHistories.chatHistoryDetails[chatIndex].messages = cleanMessages;
-          if (this.currentSessionId) {
-            currentHistories.chatHistoryDetails[chatIndex].sessionId = this.currentSessionId;
+        // Get the last message that needs to be saved
+        const lastMessage = this.messages[this.messages.length - 1];
+        if (lastMessage && lastMessage.role === 'assistant') {
+          const content = (lastMessage as any).rawContent || lastMessage.content;
+
+          // Only save if content is not empty (avoid saving empty messages during typing)
+          if (content && content.trim().length > 0) {
+            console.log('Saving assistant message to API:', content.substring(0, 50) + '...');
+            await this.chatDataService.addMessage(this.currentChatId, lastMessage.role, content);
+
+            // Only refresh chat list once after final message is saved
+            this.chatService.notifyChatHistoryUpdated();
+          } else {
+            console.log('Skipping empty message save');
           }
-          
-          // Save to localStorage
-          this.setChatHistoriesToLocalStorage(currentHistories);
-          
-          // Notify other components that chat history was updated
-          this.chatService.notifyChatHistoryUpdated();
         }
+
       } catch (error) {
-        console.error('Failed to update chat history:', error);
+        console.error('Failed to update chat history via API:', error);
       }
     }
   }
 
-  getCurrentChatHistoriesFromLocalStorage(): ChatHistories {
-    const currentHistories = localStorage.getItem('chatHistories');
-    
-    if (currentHistories) {
-      const histories = JSON.parse(currentHistories) as ChatHistories;
-      return {
-        chatHistoryDetails: histories.chatHistoryDetails,
-      };
-    }
-    
-    return {
-      chatHistoryDetails: [],
-    };
-  }
 
-  setChatHistoriesToLocalStorage(chatHistories: ChatHistories) {
-    localStorage.setItem('chatHistories', JSON.stringify(chatHistories));
-  }
 
   ngOnDestroy() {
     // Clean up any running typing animation frames
