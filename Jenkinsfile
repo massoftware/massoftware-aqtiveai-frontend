@@ -5,7 +5,7 @@ pipeline {
         REGISTRY = "maserp/aqtiveai-frontend"
         REGISTRY_CREDENTIAL = 'dockerhub-user-maserp'
         DOCKER_IMAGE = ''
-        NODE_VERSION = '18'
+        NODE_VERSION = 'NodeJS-18'
         ANGULAR_CLI_VERSION = '18'
     }
 
@@ -224,13 +224,15 @@ CMD ["nginx", "-g", "daemon off;"]
             echo '🧹 Cleaning up...'
             script {
                 try {
-                    // Clean up Docker images
-                    sh """
-                        docker rmi -f \${REGISTRY}:\${BUILD_NUMBER} 2>/dev/null || true
-                        docker rmi -f \${REGISTRY}:latest 2>/dev/null || true
-                        docker image prune -f 2>/dev/null || true
-                        docker system prune -f 2>/dev/null || true
-                    """
+                    node {
+                        // Clean up Docker images
+                        sh """
+                            docker rmi -f \${REGISTRY}:\${BUILD_NUMBER} 2>/dev/null || true
+                            docker rmi -f \${REGISTRY}:latest 2>/dev/null || true
+                            docker image prune -f 2>/dev/null || true
+                            docker system prune -f 2>/dev/null || true
+                        """
+                    }
                 } catch (Exception e) {
                     echo "Cleanup warning: ${e.getMessage()}"
                 }

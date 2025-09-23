@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'NodeJS-18'  // This must match your Jenkins tool configuration
+    }
+
+    stages {
+        stage('Test Node.js') {
+            steps {
+                sh '''
+                    echo "Node version: $(node --version)"
+                    echo "NPM version: $(npm --version)"
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm ci'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+    }
+}
