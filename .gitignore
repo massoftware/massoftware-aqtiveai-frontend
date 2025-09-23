@@ -49,9 +49,6 @@ Thumbs.db
 .env
 .env.local
 .env.production
-environments
-src/environments/environment.prod.ts
-src/environments/environment.ts
 
 # Firebase
 .firebase
