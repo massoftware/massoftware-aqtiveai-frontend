@@ -46,7 +46,7 @@ pipeline {
             steps {
                 echo '📦 Installing dependencies...'
                 sh '''
-                    npm ci --prefer-offline --no-audit
+                    npm ci --prefer-offline --no-audit --legacy-peer-deps
                     echo "Dependencies installed successfully"
                 '''
             }
