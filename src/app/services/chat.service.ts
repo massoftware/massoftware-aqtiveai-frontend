@@ -25,7 +25,7 @@ interface ChatMessage {
   providedIn: 'root',
 })
 export class ChatService {
-  private databaseApiUrl = 'http://localhost:8000'; // Your FastAPI endpoint
+  private databaseApiUrl = environment.apiUrl;
 
   messages: ChatMessage[] = [];
   private messagesSubject = new BehaviorSubject<ChatMessage[]>(

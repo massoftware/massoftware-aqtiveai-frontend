@@ -68,7 +68,7 @@ interface ConnectionValidationResponse {
 })
 export class ChatDataService {
   totalChatConversation: number = 0;
-  private apiUrl = 'http://localhost:8000'; // Match the URL used in ChatService
+  private apiUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,
