@@ -1,6 +1,10 @@
 # Multi-stage build for Angular frontend
 FROM node:22-alpine AS builder
 
+# Install Python and build tools for native dependencies
+RUN apk add --no-cache python3 py3-pip make g++ && \
+    ln -sf python3 /usr/bin/python
+
 # Set working directory
 WORKDIR /app
 
