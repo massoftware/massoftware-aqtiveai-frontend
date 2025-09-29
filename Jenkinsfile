@@ -5,7 +5,7 @@ pipeline {
         REGISTRY = "maserp/aqtiveai-frontend"
         REGISTRY_CREDENTIAL = 'dockerhub-user-maserp'
         DOCKER_IMAGE = ''
-        NODE_VERSION = 'NodeJS-18'
+        NODE_VERSION = 'NodeJS-22'
         ANGULAR_CLI_VERSION = '18'
     }
 
@@ -52,15 +52,6 @@ pipeline {
             steps {
                 echo '📦 Installing dependencies...'
                 sh '''
-                    # Install Python and build tools (try different package managers)
-                    if command -v apt-get >/dev/null 2>&1; then
-                        apt-get update && apt-get install -y python3 python3-pip build-essential || true
-                    elif command -v yum >/dev/null 2>&1; then
-                        yum install -y python3 python3-pip gcc-c++ make || true
-                    elif command -v apk >/dev/null 2>&1; then
-                        apk add --no-cache python3 py3-pip make g++ || true
-                    fi
-
                     # Install dependencies with fallback options
                     npm ci --prefer-offline --no-audit --legacy-peer-deps || npm install --legacy-peer-deps
                     echo "Dependencies installed successfully"
