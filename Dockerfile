@@ -17,8 +17,9 @@ RUN npm ci --prefer-offline --no-audit --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build -- --configuration=production
+# Rebuild native modules for Alpine Linux and build the application
+RUN npm rebuild --verbose && \
+    npm run build -- --configuration=production
 
 # Production stage
 FROM nginx:alpine
