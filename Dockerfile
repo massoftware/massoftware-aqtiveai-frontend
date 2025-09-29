@@ -1,14 +1,18 @@
 # Multi-stage build for Angular frontend
 FROM node:22-alpine AS builder
 
+# Install Python and build tools for native dependencies (lmdb required by Angular 18)
+RUN apk add --no-cache python3 py3-pip make g++ && \
+    ln -sf python3 /usr/bin/python
+
 # Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (skip optional deps like lmdb)
-RUN npm ci --prefer-offline --no-audit --legacy-peer-deps --omit=optional
+# Install dependencies
+RUN npm ci --prefer-offline --no-audit --legacy-peer-deps
 
 # Copy source code
 COPY . .
