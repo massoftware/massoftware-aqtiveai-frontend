@@ -5,7 +5,7 @@ pipeline {
         REGISTRY = "maserp/aqtiveai-frontend"
         REGISTRY_CREDENTIAL = 'dockerhub-user-maserp'
         DOCKER_IMAGE = ''
-        NODE_VERSION = 'NodeJS-22'
+        NODE_VERSION = 'NodeJS-18'
         ANGULAR_CLI_VERSION = '18'
     }
 

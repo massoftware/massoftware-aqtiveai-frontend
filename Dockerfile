@@ -1,5 +1,5 @@
 # Multi-stage build for Angular frontend
-FROM node:22-alpine AS builder
+FROM node:18-alpine AS builder
 
 # Install Python and build tools for native dependencies (lmdb required by Angular 18)
 RUN apk add --no-cache python3 py3-pip make g++ && \
@@ -17,7 +17,7 @@ RUN npm ci --prefer-offline --no-audit --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Rebuild native modules for Alpine Linux and build the application
+# Rebuild native modules for Alpine Linux with Node.js 18
 RUN npm rebuild --verbose && \
     npm run build -- --configuration=production
 
